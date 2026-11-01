@@ -1,0 +1,866 @@
+<!doctype html>
+<html lang="en"><head>
+<meta name="robots" content="noindex,nofollow">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Say It Right</title>
+<meta name="rev" content="1793538783747">
+<meta name="repo" content="">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@200..900&amp;family=Instrument+Serif:ital@0;1&amp;family=JetBrains+Mono:wght@300..700&amp;display=swap" rel="stylesheet">
+<style>
+:root{
+  --ease:cubic-bezier(.16,1,.3,1);--spring:cubic-bezier(.34,1.56,.64,1);--soft:cubic-bezier(.45,0,.2,1);
+  --sans:"SF Pro Display",-apple-system,BlinkMacSystemFont,"Inter","Helvetica Neue",Arial,sans-serif;
+  --serif:"Instrument Serif","New York",Georgia,serif;
+  --mono:"JetBrains Mono","SF Mono",ui-monospace,Menlo,monospace;
+  --ink:#f4f8f9;--mut:rgba(228,240,243,.62);--dim:rgba(228,240,243,.38);
+  --teal:#46d9d2;--gold:#ffc46b;--brand:#33707f;
+  --pp:0%;
+  --acc:color-mix(in oklab,var(--teal),var(--gold) var(--pp));
+  --acc2:color-mix(in oklab,#2a9fd6,#ff8a5b var(--pp));
+  --mx:0;--my:0;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:#03070b;color:var(--ink);font-family:var(--sans);overflow:hidden;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+canvas#bg{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;display:block}
+canvas#motes{position:fixed;inset:0;width:100vw;height:100vh;z-index:1;pointer-events:none}
+#stage{position:absolute;left:0;top:0;width:1920px;height:1080px;transform-origin:0 0;z-index:2;perspective:2400px;perspective-origin:50% 50%}
+.slide{position:absolute;inset:0;opacity:0;visibility:hidden;transform:translateZ(-760px);filter:blur(22px);perspective:1600px;
+  transition:opacity .9s var(--ease),transform 1.4s var(--ease),filter 1s var(--ease),visibility 0s linear 1.4s}
+.slide.active{opacity:1;visibility:visible;transform:none;filter:none;transition:opacity 1s var(--ease) .12s,transform 1.5s var(--ease) .05s,filter 1.1s var(--ease) .1s,visibility 0s}
+.slide.leaving{opacity:0;visibility:visible;transform:translateZ(520px);filter:blur(26px);transition:opacity .75s var(--ease),transform 1.2s var(--ease),filter .9s var(--ease),visibility 0s linear 1.2s}
+#stage.back .slide:not(.active):not(.leaving){transform:translateZ(520px)}
+#stage.back .slide.leaving{transform:translateZ(-760px)}
+#stage.static .slide{transition:none!important}
+#stage.static .a,#stage.static .ch,#stage.static .draw{animation:none!important;opacity:1!important}
+#stage.static .draw{stroke-dashoffset:0!important}
+#stage.static .s-close .photo{opacity:1;transform:none}
+
+/* entrance system */
+.a{opacity:0}
+.active .a,.leaving .a{animation-name:var(--k,rise);animation-duration:var(--t,1.4s);animation-timing-function:var(--e,var(--ease));animation-delay:var(--d,0s);animation-fill-mode:both}
+@keyframes rise{from{opacity:0;transform:translateY(70px);filter:blur(16px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes riseFar{from{opacity:0;transform:translateY(240px) scale(.94);filter:blur(24px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes depth{from{opacity:0;transform:translateZ(-420px) rotateX(18deg);filter:blur(20px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes bloom{0%{opacity:0;transform:scale(.4);filter:blur(30px) brightness(3)}60%{opacity:1;filter:blur(0) brightness(1.4)}100%{opacity:1;transform:none;filter:none}}
+@keyframes left{from{opacity:0;transform:translateX(-120px);filter:blur(14px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes right{from{opacity:0;transform:translateX(120px);filter:blur(14px)}to{opacity:1;transform:none;filter:blur(0)}}
+@keyframes pop{0%{opacity:0;transform:scale(.5)}60%{opacity:1}100%{opacity:1;transform:none}}
+@keyframes flipUp{from{opacity:0;transform:perspective(1200px) rotateX(-75deg) translateY(80px);filter:blur(10px)}to{opacity:1;transform:none;filter:none}}
+@keyframes track{from{opacity:0;letter-spacing:1em;filter:blur(12px)}to{opacity:1;filter:blur(0)}}
+
+/* split headline letters */
+.split .w{display:inline-block;white-space:nowrap;perspective:900px}
+.split .ch{display:inline-block;opacity:0;transform-origin:50% 100%}
+.active .split .ch,.leaving .split .ch{animation:chIn 1.25s var(--ease) both;animation-delay:calc(var(--d,0s) + var(--i)*32ms)}
+@keyframes chIn{from{opacity:0;transform:translateY(.5em) rotateX(-85deg);filter:blur(14px)}to{opacity:1;transform:none;filter:blur(0)}}
+.split{font-kerning:none}
+
+/* type */
+.mono{font-family:var(--mono);font-weight:500;text-transform:uppercase;letter-spacing:.32em;font-size:19px}
+.eyebrow{font-family:var(--mono);font-weight:500;text-transform:uppercase;letter-spacing:.34em;font-size:19px;color:var(--acc);display:flex;align-items:center;gap:18px}
+.eyebrow::before{content:"";width:46px;height:1px;background:linear-gradient(90deg,transparent,var(--acc));box-shadow:0 0 12px var(--acc)}
+.eyebrow.c::after{content:"";width:46px;height:1px;background:linear-gradient(270deg,transparent,var(--acc));box-shadow:0 0 12px var(--acc)}
+.mega{font-size:236px;font-weight:700;letter-spacing:-.055em;line-height:.9;margin:0}
+.h1{font-size:118px;font-weight:700;letter-spacing:-.045em;line-height:.96;margin:0}
+.h2{font-size:58px;font-weight:650;letter-spacing:-.03em;line-height:1.02;margin:0}
+.h3{font-size:38px;font-weight:600;letter-spacing:-.02em;line-height:1.1;margin:0}
+.lede{font-size:40px;font-weight:350;letter-spacing:-.012em;color:var(--mut);line-height:1.3;margin:0}
+.body{font-size:30px;font-weight:400;color:var(--mut);line-height:1.38;margin:0}
+em,.serif{font-family:var(--serif);font-style:italic;font-weight:400;letter-spacing:-.01em}
+h1 em,.mega em,.h1 em{color:var(--acc);text-shadow:0 0 50px color-mix(in srgb,var(--acc) 45%,transparent)}
+.grad{background:linear-gradient(100deg,#fff 0%,var(--acc) 25%,#fff 50%,var(--acc) 75%,#fff 100%);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:shimmer 9s linear infinite}
+@keyframes shimmer{to{background-position:300% 0}}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+/* liquid glass */
+.glass{position:relative;border-radius:38px;background:linear-gradient(155deg,rgba(255,255,255,.14),rgba(255,255,255,.04) 55%,rgba(255,255,255,.07));
+  -webkit-backdrop-filter:blur(30px) saturate(185%);backdrop-filter:blur(30px) saturate(185%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.38),inset 0 -1px 0 rgba(255,255,255,.07),inset 0 0 0 1px rgba(255,255,255,.07),0 50px 110px -40px rgba(0,0,0,.75);overflow:hidden;isolation:isolate}
+.glass::before{content:"";position:absolute;inset:0;border-radius:inherit;padding:1.5px;pointer-events:none;
+  background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 85%,transparent),rgba(255,255,255,.08) 30%,transparent 55%,color-mix(in srgb,var(--acc2) 60%,transparent));
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.75}
+.glass::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;z-index:-1;
+  background:radial-gradient(520px circle at var(--gx,30%) var(--gy,-20%),rgba(255,255,255,.17),transparent 45%)}
+.chip{display:inline-flex;align-items:center;gap:12px;padding:12px 24px;border-radius:999px;font-size:22px;font-weight:600;letter-spacing:.01em;
+  background:rgba(255,255,255,.08);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16),inset 0 1px 0 rgba(255,255,255,.25);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px)}
+.chip.acc{background:color-mix(in srgb,var(--acc) 22%,transparent);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--acc) 60%,transparent);color:#fff}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--acc);box-shadow:0 0 14px var(--acc),0 0 30px var(--acc)}
+.pulse{animation:pulse 2.2s ease-in-out infinite}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(1.6);opacity:.55}}
+.depth{translate:calc(var(--mx)*var(--z,10)*1px) calc(var(--my)*var(--z,10)*1px)}
+.float{animation:floaty 8s ease-in-out infinite}
+@keyframes floaty{0%,100%{translate:0 0}50%{translate:0 -16px}}
+.draw{stroke-dasharray:1;stroke-dashoffset:1}
+.active .draw,.leaving .draw{animation:draw 2s var(--ease) both;animation-delay:var(--d,0s)}
+@keyframes draw{to{stroke-dashoffset:0}}
+.logo-tile{display:flex;align-items:center;justify-content:center;background:#fff;border-radius:18px;padding:10px 16px;box-shadow:0 18px 40px -18px rgba(0,0,0,.6),inset 0 0 0 1px rgba(255,255,255,.6)}
+.logo-tile img{max-width:100%;max-height:100%;object-fit:contain;display:block}
+.logo-tile.dark{background:#0b0b0b}
+
+/* rise logo */
+.rise-logo svg{width:100%;height:100%;display:block;overflow:visible}
+.rise-logo .rays{transform-origin:100px 122px;transform-box:view-box}
+.active .rise-logo .rays{animation:raysIn 2.4s var(--ease) both,raysBreath 7s ease-in-out 2.4s infinite}
+@keyframes raysIn{from{transform:rotate(-80deg) scale(.3);opacity:0}to{transform:none;opacity:1}}
+@keyframes raysBreath{0%,100%{transform:rotate(0)}50%{transform:rotate(3deg)}}
+
+/* layout helpers */
+.center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.pad{position:absolute;inset:120px 130px 110px}
+.row{display:flex;gap:32px}
+.col{display:flex;flex-direction:column}
+
+/* HUD */
+#hud{position:fixed;inset:0;z-index:20;pointer-events:none;transition:opacity .8s var(--ease)}
+body.idle #hud{opacity:0}
+#hud .tl{position:absolute;left:34px;top:28px;display:flex;align-items:center;gap:14px;color:rgba(255,255,255,.8)}
+#hud .tl .rise-logo{width:34px;height:34px;filter:drop-shadow(0 0 12px rgba(70,217,210,.55))}
+#hud .tl span{font-family:var(--mono);font-size:12px;letter-spacing:.34em;text-transform:uppercase}
+#hud .tr{position:absolute;right:36px;top:32px;font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;color:rgba(255,255,255,.75);display:flex;gap:18px;align-items:center}
+#hud .tr b{color:var(--acc);font-weight:600}
+#prog{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);display:flex;gap:6px;pointer-events:auto}
+#prog i{display:block;width:30px;height:4px;border-radius:4px;background:rgba(255,255,255,.18);cursor:pointer;transition:all .6s var(--ease);position:relative;overflow:hidden}
+#prog i.on{background:rgba(255,255,255,.45)}
+#prog i.cur{width:64px;background:var(--acc);box-shadow:0 0 14px var(--acc)}
+#prog i:hover{background:rgba(255,255,255,.7)}
+#help{position:fixed;inset:0;z-index:40;display:grid;place-items:center;background:rgba(2,6,10,.55);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+#help.show{opacity:1;pointer-events:auto}
+#help .glass{padding:44px 54px;min-width:560px}
+#help h3{margin:0 0 22px;font-size:30px;letter-spacing:-.02em}
+#help table{border-collapse:collapse;font-size:18px}
+#help td{padding:9px 18px 9px 0;color:var(--mut)}
+#help td:first-child{font-family:var(--mono);color:#fff;font-size:15px;letter-spacing:.08em}
+#toast{position:fixed;left:50%;top:26px;transform:translate(-50%,-20px);z-index:45;opacity:0;transition:all .5s var(--ease);font-family:var(--mono);font-size:13px;letter-spacing:.2em;text-transform:uppercase;padding:12px 22px;border-radius:999px;background:rgba(10,20,26,.7);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px)}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+body.editing [contenteditable]{outline:1px dashed rgba(255,255,255,.35);outline-offset:6px;border-radius:6px;cursor:text}
+body.editing [contenteditable]:focus{outline:2px solid var(--acc)}
+
+/* overview */
+body.overview #stage{perspective:none}
+body.overview .slide{visibility:visible!important;opacity:1!important;filter:none!important;cursor:pointer;
+  transform:translate(var(--ox),var(--oy)) scale(.1667)!important;transform-origin:0 0;transition:transform .9s var(--ease),opacity .5s!important;border-radius:60px;outline:6px solid rgba(255,255,255,.12);background:rgba(4,10,16,.55)}
+body.overview .slide.cur{outline:10px solid var(--acc)}
+body.overview .slide:hover{outline-color:rgba(255,255,255,.6)}
+body.overview .glass,body.overview .chip{-webkit-backdrop-filter:none;backdrop-filter:none}
+body.overview .slide *{pointer-events:none}
+
+
+/* QR frames */
+.qr{position:relative;background:#fff;border-radius:22px;padding:14px;box-shadow:0 0 0 1px rgba(255,255,255,.6),0 0 60px -10px var(--acc)}
+.qr img{display:block;width:100%;image-rendering:pixelated}
+.qr .scan{position:absolute;left:8px;right:8px;height:3px;top:10%;background:var(--acc);box-shadow:0 0 18px 4px var(--acc);border-radius:3px;animation:scan 3.2s var(--soft) infinite;opacity:.9}
+@keyframes scan{0%,100%{top:8%}50%{top:90%}}
+.qr .cn{position:absolute;width:34px;height:34px;border:4px solid var(--acc);filter:drop-shadow(0 0 6px var(--acc))}
+.qr .cn.a1{left:-14px;top:-14px;border-right:0;border-bottom:0;border-radius:14px 0 0 0}
+.qr .cn.a2{right:-14px;top:-14px;border-left:0;border-bottom:0;border-radius:0 14px 0 0}
+.qr .cn.a3{left:-14px;bottom:-14px;border-right:0;border-top:0;border-radius:0 0 0 14px}
+.qr .cn.a4{right:-14px;bottom:-14px;border-left:0;border-top:0;border-radius:0 0 14px 0}
+
+@media (prefers-reduced-motion:reduce){.float,.pulse,.qr .scan{animation:none!important}}
+
+/* touch buttons + phone hints */
+#tbtn{position:absolute;right:22px;bottom:14px;display:flex;gap:8px;pointer-events:auto}
+#tbtn button{width:40px;height:40px;border-radius:12px;border:0;cursor:pointer;color:#fff;font-size:18px;line-height:1;background:rgba(10,20,26,.55);box-shadow:inset 0 0 0 1px rgba(255,255,255,.18);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)}
+#tbtn button:hover{background:rgba(255,255,255,.18)}
+#rot{display:none}
+@media (orientation:portrait) and (max-width:820px){
+  #rot{display:flex;position:fixed;left:16px;right:16px;bottom:72px;z-index:30;justify-content:center;align-items:center;gap:10px;padding:12px 16px;border-radius:999px;font:600 14px/1.2 var(--sans);color:#fff;background:rgba(10,20,26,.7);box-shadow:inset 0 0 0 1px rgba(255,255,255,.2);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);pointer-events:none;animation:rotHint 7s var(--ease) 1s both}
+  #prog i{width:14px}#prog i.cur{width:30px}
+  #hud .tl span{display:none}
+}
+@keyframes rotHint{0%{opacity:0;transform:translateY(20px)}10%,80%{opacity:1;transform:none}100%{opacity:0}}
+body.editing #rot{display:none}
+
+:root{--teal:#7cc8ff;--gold:#ffc98a;--acc2:color-mix(in oklab,#8a7dff,#ff8f7a var(--pp));}
+/* ============ DECK ============ */
+/* shared bits for this deck */
+:root{--bad:#ff8a8a}
+.head{position:absolute;left:130px;top:110px;right:130px}
+.head .h1{margin-top:20px}
+.ic{stroke:var(--acc);fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 12px color-mix(in srgb,var(--acc) 55%,transparent))}
+.fillacc{fill:var(--acc);stroke:none}
+.gradnum{padding-right:.1em;margin-right:-.1em;color:transparent;background:linear-gradient(180deg,#fff 10%,var(--acc) 70%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 30px color-mix(in srgb,var(--acc) 35%,transparent))}
+s{text-decoration:none;position:relative;color:var(--dim)}
+s::after{content:"";position:absolute;left:-3px;right:-3px;top:55%;height:2px;border-radius:2px;background:var(--bad);opacity:.85}
+.arr{fill:none;stroke:var(--acc);stroke-width:3;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 8px var(--acc))}
+@keyframes strike{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes breathe{0%,100%{opacity:.55;transform:scale(.94)}50%{opacity:1;transform:scale(1.06)}}
+
+/* 1 title: a live word swap under the headline */
+.s-title .logo-wrap{position:relative;width:150px;height:150px;margin-bottom:40px}
+.s-title .logo-wrap .rise-logo{position:absolute;inset:0}
+.s-title .logo-wrap .halo{position:absolute;inset:-160px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--acc) 40%,transparent),transparent 62%);filter:blur(10px);animation:breathe 5s ease-in-out infinite}
+.s-title .mega{margin-top:24px}
+.s-title .swapper{margin-top:64px;width:1240px;height:132px;border-radius:999px;display:grid;grid-template-columns:1fr 120px 1fr;align-items:center;padding:0 60px}
+.s-title .swapper .from{justify-self:end;position:relative;font-size:54px;font-weight:500;letter-spacing:-.02em;color:var(--mut)}
+.s-title .swapper .from::after{content:"";position:absolute;left:-8px;right:-8px;top:54%;height:4px;border-radius:4px;background:var(--bad);box-shadow:0 0 14px var(--bad);transform:scaleX(0);transform-origin:left}
+.s-title .swapper .arr{width:80px;height:40px;justify-self:center}
+.s-title .swapper .to{justify-self:start;font-family:var(--serif);font-style:italic;font-size:68px;color:#fff;text-shadow:0 0 40px color-mix(in srgb,var(--acc) 60%,transparent);white-space:nowrap}
+.s-title .swapper.go .from{animation:fadeIn .5s var(--ease) both,dimOut .6s ease 1.1s forwards}
+.s-title .swapper.go .from::after{animation:strike .5s var(--ease) .6s forwards}
+.s-title .swapper.go .to{animation:toIn .9s var(--ease) 1.1s both}
+@keyframes fadeIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+@keyframes dimOut{to{opacity:.45}}
+@keyframes toIn{from{opacity:0;transform:translateY(26px);filter:blur(12px)}to{opacity:1;transform:none;filter:none}}
+.s-title .lede{margin-top:50px}
+#stage.static .s-title .swapper .to,#stage.static .s-title .swapper .from{opacity:1}
+
+/* 2 SOD */
+.s-sod .left{position:absolute;left:130px;top:250px;width:1000px}
+.s-sod .sodbox{position:absolute;right:170px;top:200px;width:620px;height:620px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.s-sod .sodbox .ring{position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--bad) 50%,transparent),0 0 120px -20px var(--bad),inset 0 0 120px -30px var(--bad);animation:breathe 6s ease-in-out infinite}
+.s-sod .sodbox .big{font-size:250px;font-weight:800;letter-spacing:-.06em;line-height:.9;background:linear-gradient(180deg,#fff 10%,var(--bad) 80%);-webkit-background-clip:text;background-clip:text;filter:drop-shadow(0 0 40px color-mix(in srgb,var(--bad) 40%,transparent))}
+.s-sod .sodbox .mono{color:var(--bad);margin-top:20px;font-size:22px}
+
+/* 3 flinch lanes */
+.s-flinch .lanes{position:absolute;left:130px;right:130px;top:420px;display:flex;flex-direction:column;gap:70px}
+.s-flinch .lane{display:flex;align-items:center}
+.s-flinch .say{width:640px;padding:30px 40px;border-radius:30px;font-size:38px;font-weight:500;letter-spacing:-.015em;flex:none}
+.s-flinch .link{width:150px;height:20px;flex:none;overflow:visible}
+.s-flinch .link path{fill:none;stroke-width:3;stroke-linecap:round}
+.s-flinch .node{width:120px;height:120px;border-radius:50%;flex:none;display:grid;place-items:center}
+.s-flinch .node svg{width:70px;height:70px;overflow:visible}
+.s-flinch .node path{fill:none;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}
+.s-flinch .out{margin-left:10px}
+.s-flinch .out b{display:block;font-size:52px;font-weight:750;letter-spacing:-.03em}
+.s-flinch .out span{display:block;font-size:28px;color:var(--mut);margin-top:6px}
+.s-flinch .bad .link path,.s-flinch .bad .node path{stroke:var(--bad);filter:drop-shadow(0 0 8px var(--bad))}
+.s-flinch .bad .node{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--bad) 60%,transparent),0 0 60px -10px var(--bad)}
+.s-flinch .bad .out b{color:var(--bad)}
+.s-flinch .bad .say{color:var(--mut)}
+.s-flinch .good .link path,.s-flinch .good .node path{stroke:var(--acc);filter:drop-shadow(0 0 8px var(--acc))}
+.s-flinch .good .node circle{fill:var(--acc)}
+.s-flinch .good .node{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--acc) 70%,transparent),0 0 70px -10px var(--acc)}
+.s-flinch .good .out b{color:var(--acc)}
+.s-flinch .foot{position:absolute;left:130px;right:130px;bottom:110px;display:flex;gap:18px;align-items:center;font-size:32px;color:var(--mut);margin:0}
+
+/* 4 three shifts */
+.s-three .cards,.s-drill .cards{position:absolute;left:130px;right:130px;top:400px;bottom:120px;display:grid;grid-template-columns:repeat(3,1fr);gap:34px}
+.s-three .card,.s-drill .card{padding:44px 44px;display:flex;flex-direction:column}
+.s-three .card .n,.s-drill .card .n{font-family:var(--mono);font-size:20px;letter-spacing:.3em;color:var(--acc);text-transform:uppercase}
+.s-three .card svg.ic,.s-drill .card svg.ic{width:120px;height:120px;margin-top:40px}
+.s-three .card .big,.s-drill .card .big{font-size:50px;font-weight:700;letter-spacing:-.03em;line-height:1.04;margin-top:auto}
+.s-three .card .sm,.s-drill .card .sm{font-size:28px;color:var(--mut);margin-top:16px;line-height:1.35}
+.s-three .card .sm b{color:#fff;font-weight:600}
+
+/* 5 own */
+.s-own .left{position:absolute;left:130px;top:170px;width:1000px}
+.s-own .pair{display:flex;gap:80px;margin-top:80px}
+.s-own .pair .k{font-size:17px;color:var(--acc);margin-bottom:22px}
+.s-own .pair .k.bad{color:var(--bad)}
+.s-own .ws{display:flex;flex-direction:column;gap:14px;font-size:50px;font-weight:600;letter-spacing:-.025em}
+.s-own .ws s{width:max-content}
+.s-own .ws.good span{color:#fff;text-shadow:0 0 30px color-mix(in srgb,var(--acc) 40%,transparent)}
+.s-own .stat{position:absolute;right:150px;top:230px;width:600px;height:600px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:60px}
+.s-own .stat .big{font-size:280px;font-weight:800;letter-spacing:-.06em;line-height:.85}
+.s-own .stat .big span{font-size:.5em}
+.s-own .stat .t{font-size:32px;line-height:1.3;margin-top:24px;max-width:420px}
+.s-own .stat .src{color:var(--acc);font-size:15px;margin-top:22px}
+
+/* 6 A or B */
+.s-ab .chats{position:absolute;left:130px;right:130px;top:410px;bottom:120px;display:grid;grid-template-columns:1fr 1fr;gap:80px}
+.s-ab .chat{display:flex;flex-direction:column;gap:22px}
+.s-ab .lab{font-size:18px;color:var(--acc);margin-bottom:6px}
+.s-ab .no .lab{color:var(--bad)}
+.s-ab .bub{max-width:640px;font-size:40px;font-weight:500;letter-spacing:-.015em;padding:26px 36px;line-height:1.2}
+.s-ab .bub.me{align-self:flex-start;border-radius:38px 38px 38px 10px;background:linear-gradient(135deg,color-mix(in srgb,var(--acc) 34%,#0b1830),color-mix(in srgb,var(--acc2) 30%,#0b1830));box-shadow:inset 0 1px 0 rgba(255,255,255,.3),0 24px 60px -24px rgba(0,0,0,.8)}
+.s-ab .no .bub.me{background:rgba(255,255,255,.07);color:var(--mut);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.s-ab .bub.them{align-self:flex-end;border-radius:38px 38px 10px 38px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.s-ab .res{margin-top:16px;display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:22px;letter-spacing:.3em;text-transform:uppercase}
+.s-ab .no .res{color:var(--bad)}
+.s-ab .yes .res{color:var(--acc)}
+.s-ab .res .x{width:22px;height:22px;position:relative}
+.s-ab .res .x::before,.s-ab .res .x::after{content:"";position:absolute;left:0;right:0;top:10px;height:3px;border-radius:3px;background:var(--bad);transform:rotate(45deg)}
+.s-ab .res .x::after{transform:rotate(-45deg)}
+
+/* 7 OPEN */
+.s-open .h1{font-size:110px}
+.s-open .letters{position:absolute;left:130px;right:130px;top:440px;bottom:230px;display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+.s-open .lt{padding:34px 38px;display:flex;flex-direction:column;border-radius:36px}
+.s-open .lt .L{font-size:170px;font-weight:800;letter-spacing:-.05em;line-height:.85}
+.s-open .lt .nm{font-size:48px;font-weight:750;letter-spacing:-.03em;margin-top:auto}
+.s-open .lt .ds{font-family:var(--serif);font-style:italic;font-size:34px;color:#fff;margin-top:6px}
+.s-open .lt .ex{font-size:22px;color:var(--mut);margin-top:16px;line-height:1.4}
+.s-open .doors{position:absolute;left:130px;right:130px;bottom:110px;height:96px;border-radius:30px;display:flex;align-items:center;gap:20px;padding:0 40px;font-size:34px;font-weight:500;box-shadow:0 0 0 1.5px color-mix(in srgb,var(--acc) 70%,transparent),0 0 70px -16px var(--acc),inset 0 1px 0 rgba(255,255,255,.35)}
+.s-open .doors b{color:var(--acc);font-weight:750}
+
+/* 8 to 11 charts */
+.s-chart .tbl{position:absolute;left:130px;right:130px;top:390px;bottom:110px;display:flex;flex-direction:column;gap:16px}
+.s-chart .th,.s-chart .rw{display:grid;grid-template-columns:96px 600px 100px 1fr;align-items:center}
+.s-chart .th{padding:0 40px;font-family:var(--mono);font-size:16px;letter-spacing:.3em;text-transform:uppercase;color:var(--dim)}
+.s-chart .th span:last-child{color:var(--acc)}
+.s-chart .rw{flex:1;padding:0 40px;border-radius:28px}
+.s-chart .tg{width:62px;height:62px;border-radius:18px;display:grid;place-items:center;font-size:30px;font-weight:800;color:#06121c;background:linear-gradient(160deg,#fff,var(--acc));box-shadow:0 0 30px -6px var(--acc)}
+.s-chart .tg.tAB{font-size:19px;letter-spacing:-.02em}
+.s-chart .bad{position:relative;width:max-content;white-space:nowrap;font-size:33px;color:var(--mut);letter-spacing:-.01em;line-height:1.15}
+.s-chart .bad::after{content:"";position:absolute;left:-4px;right:-4px;top:54%;height:3px;border-radius:3px;background:var(--bad);box-shadow:0 0 10px var(--bad);transform:scaleX(0);transform-origin:left}
+.active .s-chart .bad::after,.s-chart.active .bad::after{animation:strike .7s var(--ease) both;animation-delay:calc(var(--d) + .7s)}
+.s-chart .rw:nth-child(2) .bad::after{--d:.8s}.s-chart .rw:nth-child(3) .bad::after{--d:.95s}.s-chart .rw:nth-child(4) .bad::after{--d:1.1s}.s-chart .rw:nth-child(5) .bad::after{--d:1.25s}.s-chart .rw:nth-child(6) .bad::after{--d:1.4s}
+#stage.static .s-chart .bad::after{transform:none}
+.s-chart .arr{width:70px;height:36px;justify-self:center}
+.s-chart .good{font-size:42px;font-weight:650;letter-spacing:-.025em;line-height:1.1;color:#fff}
+.s-chart .four .bad{font-size:35px}
+.s-chart .four .good{font-size:44px}
+
+/* 12 ask */
+.s-ask .hero{position:absolute;left:130px;right:130px;top:400px;height:280px;padding:44px 60px;border-radius:40px;box-shadow:0 0 0 1.5px var(--acc),0 0 110px -20px var(--acc),inset 0 1px 0 rgba(255,255,255,.4)}
+.s-ask .k{color:var(--acc);font-size:17px}
+.s-ask .hero .q{font-family:var(--serif);font-style:italic;font-size:66px;line-height:1.12;margin:20px 0 0}
+.s-ask b{font-family:var(--sans);font-style:normal;font-weight:700;color:var(--acc)}
+.s-ask .minis{position:absolute;left:130px;right:130px;top:720px;bottom:110px;display:grid;grid-template-columns:1fr 1fr;gap:30px}
+.s-ask .mini{padding:34px 44px;border-radius:32px}
+.s-ask .mini p{font-family:var(--serif);font-style:italic;font-size:40px;line-height:1.18;margin:14px 0 0}
+
+/* 13 your turn */
+.s-turn .left{position:absolute;left:130px;top:150px;width:1060px}
+.s-turn .scen{margin-top:56px;padding:44px 50px;border-radius:36px}
+.s-turn .scen .k{color:var(--acc);font-size:17px}
+.s-turn .scen p{font-size:42px;line-height:1.25;font-weight:500;letter-spacing:-.02em;margin:16px 0 0}
+.s-turn .chips{display:flex;gap:16px;margin-top:18px}
+.s-turn .chips .chip{font-size:30px;padding:14px 30px}
+.s-turn .bonus{font-size:30px;color:var(--mut);margin-top:34px}
+.s-turn .bonus em{color:#fff;font-size:36px}
+.s-turn .timer{position:absolute;right:190px;top:260px;width:500px;height:500px}
+.s-turn .timer svg{position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);overflow:visible}
+.s-turn .timer .track{fill:none;stroke:rgba(255,255,255,.08);stroke-width:18}
+.s-turn .timer .arc{fill:none;stroke:var(--acc);stroke-width:18;stroke-linecap:round;stroke-dasharray:100;stroke-dashoffset:0;filter:drop-shadow(0 0 16px var(--acc));transition:stroke-dashoffset 1s linear}
+.s-turn .timer .mid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.s-turn .timer .big{font-size:200px;font-weight:800;letter-spacing:-.06em;line-height:.9}
+.s-turn .timer .mono{color:var(--acc);margin-top:12px}
+
+/* 14 model answer */
+.s-model .quote{font-family:var(--serif);font-style:italic;font-size:64px;line-height:1.2;max-width:1500px;margin:40px 0 0;text-wrap:balance}
+.s-model .quote b{font-family:var(--sans);font-style:normal;font-weight:700;color:var(--acc);text-shadow:0 0 30px color-mix(in srgb,var(--acc) 40%,transparent)}
+.s-model .tags{display:flex;gap:16px;margin-top:60px}
+
+/* 15 drill */
+.s-drill .flip{margin-top:40px;position:relative;height:120px;font-size:40px;font-weight:650;letter-spacing:-.02em}
+.s-drill .flip span{position:absolute;left:0;top:0;padding:26px 34px;border-radius:24px;white-space:nowrap}
+.s-drill .flip .b{color:var(--mut);background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12);animation:flipB 4s var(--ease) infinite}
+.s-drill .flip .g{color:#fff;background:color-mix(in srgb,var(--acc) 24%,transparent);box-shadow:inset 0 0 0 1.5px var(--acc),0 0 50px -10px var(--acc);animation:flipG 4s var(--ease) infinite}
+@keyframes flipB{0%,40%{opacity:1;transform:none}50%,90%{opacity:0;transform:rotateX(90deg)}100%{opacity:1;transform:none}}
+@keyframes flipG{0%,45%{opacity:0;transform:rotateX(-90deg)}55%,90%{opacity:1;transform:none}100%{opacity:0;transform:rotateX(-90deg)}}
+
+/* 16 app */
+.s-app .left{position:absolute;left:130px;top:150px;width:1000px}
+.s-app .steps{margin-top:60px;display:flex;flex-direction:column;gap:26px}
+.s-app .st{display:flex;align-items:center;gap:30px;font-size:40px;letter-spacing:-.015em}
+.s-app .st b{font-size:84px;font-weight:800;letter-spacing:-.05em;line-height:1;width:70px;flex:none;text-align:center}
+.s-app .st strong{font-weight:700;color:#fff}
+.s-app .st span{color:var(--mut)}
+.s-app .phone{position:absolute;right:240px;top:130px;width:430px;height:840px;border-radius:64px;padding:16px;background:linear-gradient(160deg,rgba(255,255,255,.28),rgba(255,255,255,.06));box-shadow:0 0 0 1.5px rgba(255,255,255,.25),0 60px 120px -30px rgba(0,0,0,.9),0 0 120px -40px var(--acc);transform:rotate(4deg)}
+.s-app .scr{width:100%;height:100%;border-radius:50px;background:linear-gradient(180deg,#0b1a2c,#091320);padding:80px 30px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.s-app .pt{font-size:46px;font-weight:750;letter-spacing:-.03em;margin-bottom:20px}
+.s-app .pc{height:96px;border-radius:24px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;font-size:28px;font-weight:600;background:rgba(255,255,255,.06);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.s-app .pc i{width:14px;height:14px;border-right:3px solid var(--mut);border-top:3px solid var(--mut);transform:rotate(45deg)}
+.s-app .pc.on{background:color-mix(in srgb,var(--acc) 24%,transparent);box-shadow:inset 0 0 0 1.5px var(--acc),0 0 50px -10px var(--acc)}
+.s-app .pc.on i{border-color:#fff}
+.s-app.active .pc.on{animation:tap 2.4s var(--ease) 1.8s infinite}
+@keyframes tap{0%,100%{transform:none}8%{transform:scale(.96)}16%{transform:none}}
+
+/* 17 close */
+.s-end .mega{font-size:170px;line-height:.95}
+.s-end .mega em{color:#ffd9a8}
+.s-end .fine{position:absolute;bottom:90px;left:0;right:0;text-align:center;color:var(--dim);font-size:14px}
+
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<canvas id="motes"></canvas>
+
+<div id="stage">
+<!-- 1 TITLE -->
+<section class="slide s-title" data-chapter="Welcome" data-sun=".03" data-calm="0" data-hook="title">
+  <div class="center">
+    <div class="logo-wrap a" style="--k:bloom;--t:2.2s;--d:.1s"><div class="halo"></div><div class="rise-logo"></div></div>
+    <div class="eyebrow c a" style="--d:.6s;--k:track;--t:1.8s">Team RISE · Language Training</div>
+    <h1 class="mega split sheen" style="--d:.9s">Say it <em>right.</em></h1>
+    <div class="glass swapper a" style="--k:depth;--t:1.6s;--d:1.8s">
+      <span class="from">Sell</span>
+      <svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg>
+      <span class="to">Help families</span>
+    </div>
+    <p class="lede a" style="--d:2.4s">Master the good words. <em style="color:#fff">Avoid SOD.</em></p>
+  </div>
+</section>
+
+<!-- 2 SOD -->
+<section class="slide s-sod" data-chapter="The rule" data-calm=".35">
+  <div class="left">
+    <div class="eyebrow a" style="--d:.1s">01 · The rule</div>
+    <h1 class="h1 split" style="--d:.25s;margin-top:22px">One word can<br><em>stall a yes.</em></h1>
+    <p class="lede a" style="--d:1.4s;margin-top:44px">Bad words put their guard up.<br>Good words keep the door open.</p>
+  </div>
+  <div class="sodbox a depth" style="--k:bloom;--t:2s;--d:.5s;--z:-12">
+    <div class="ring"></div>
+    <div class="big gradnum">SOD</div>
+    <div class="mono">Scenario of Disaster</div>
+  </div>
+</section>
+
+<!-- 3 THE FLINCH -->
+<section class="slide s-flinch" data-chapter="Psychology" data-calm=".4">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">02 · The psychology</div><h1 class="h1 split" style="--d:.2s">They <em>feel</em> before they think.</h1></div>
+  <div class="lanes">
+    <div class="lane bad">
+      <div class="glass say a" style="--k:left;--d:.8s">“Let’s get this policy signed.”</div>
+      <svg class="link" viewBox="0 0 160 20"><path class="draw" pathLength="1" style="--d:1.2s" d="M4 10h150"/></svg>
+      <div class="node a" style="--k:pop;--e:var(--spring);--d:1.5s"><svg viewBox="0 0 100 100"><path class="draw" pathLength="1" style="--d:1.6s" d="M50 12 L82 24 V50 C82 70 68 82 50 90 C32 82 18 70 18 50 V24 Z"/></svg></div>
+      <svg class="link" viewBox="0 0 160 20"><path class="draw" pathLength="1" style="--d:1.9s" d="M4 10h150"/></svg>
+      <div class="out a" style="--d:2.1s"><b>Guard up</b><span>Stall. Pushback. No.</span></div>
+    </div>
+    <div class="lane good">
+      <div class="glass say a" style="--k:left;--d:2.6s">“Let’s get your savings program started.”</div>
+      <svg class="link" viewBox="0 0 160 20"><path class="draw" pathLength="1" style="--d:3s" d="M4 10h150"/></svg>
+      <div class="node a" style="--k:pop;--e:var(--spring);--d:3.3s"><svg viewBox="0 0 100 100"><path class="draw" pathLength="1" style="--d:3.4s" d="M22 88 V14 H72 V88 M14 88 H86 M72 14 L50 22 V94 L72 88"/><circle cx="58" cy="54" r="3.5"/></svg></div>
+      <svg class="link" viewBox="0 0 160 20"><path class="draw" pathLength="1" style="--d:3.7s" d="M4 10h150"/></svg>
+      <div class="out a" style="--d:3.9s"><b>Door open</b><span>Questions. Interest. Yes.</span></div>
+    </div>
+  </div>
+  <p class="foot a" style="--d:4.5s"><span class="dot"></span>The feeling shows up first. The logic shows up second, and it defends the feeling.</p>
+</section>
+
+<!-- 4 WHY GOOD WORDS WORK -->
+<section class="slide s-three" data-chapter="Psychology" data-calm=".45">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">03 · Why good words work</div><h1 class="h1 split" style="--d:.2s">Three <em>shifts.</em></h1></div>
+  <div class="cards">
+    <div class="glass card a depth" style="--k:depth;--t:1.5s;--d:.6s;--z:6">
+      <div class="n">01</div>
+      <svg class="ic" viewBox="0 0 100 100"><rect class="draw" pathLength="1" style="--d:1.1s" x="14" y="20" width="72" height="60" rx="8"/><path class="draw" pathLength="1" style="--d:1.4s" d="M14 66 L38 44 L54 58 L66 48 L86 66"/><circle class="draw" pathLength="1" style="--d:1.6s" cx="68" cy="36" r="6"/></svg>
+      <div class="big">Pictures, not paperwork</div>
+      <div class="sm"><s>Policy</s> sounds like forms. <b>Savings program</b> sounds like their money growing.</div>
+    </div>
+    <div class="glass card a depth" style="--k:depth;--t:1.5s;--d:.75s;--z:9">
+      <div class="n">02</div>
+      <svg class="ic" viewBox="0 0 100 100"><circle class="draw" pathLength="1" style="--d:1.25s" cx="50" cy="34" r="15"/><path class="draw" pathLength="1" style="--d:1.55s" d="M20 86c4-17 16-26 30-26s26 9 30 26"/><path class="draw" pathLength="1" style="--d:1.8s" d="M78 18l6 6 10-12"/></svg>
+      <div class="big">About them, not us</div>
+      <div class="sm"><s>Sell, close, recruit</s> are things we do to them. <b>Own, secure, get started</b> are things they get.</div>
+    </div>
+    <div class="glass card a depth" style="--k:depth;--t:1.5s;--d:.9s;--z:15">
+      <div class="n">03</div>
+      <svg class="ic" viewBox="0 0 100 100"><circle class="draw" pathLength="1" style="--d:1.4s" cx="32" cy="36" r="12"/><circle class="draw" pathLength="1" style="--d:1.55s" cx="68" cy="36" r="12"/><path class="draw" pathLength="1" style="--d:1.8s" d="M10 84c3-14 11-21 22-21s19 7 22 21M46 84c3-14 11-21 22-21s19 7 22 21"/></svg>
+      <div class="big">Side by side, not below</div>
+      <div class="sm"><s>Upline, join, my team</s> puts them at the bottom. <b>Mentor, partner, our team</b> puts them next to us.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 OWN VS BUY -->
+<section class="slide s-own" data-chapter="Psychology" data-calm=".4">
+  <div class="left">
+    <div class="eyebrow a" style="--d:.1s">04 · Ownership</div>
+    <h1 class="h1 split" style="--d:.25s;margin-top:22px">Paying hurts.<br><em>Owning</em> feels good.</h1>
+    <div class="pair a" style="--d:1.4s">
+      <div class="col"><div class="mono k bad">Sounds like losing</div><div class="ws"><s>Buy</s><s>Pay</s><s>Cost</s><s>Premium</s></div></div>
+      <div class="col"><div class="mono k">Sounds like keeping</div><div class="ws good"><span>Own</span><span>Contribute</span><span>Invest</span><span>Save</span></div></div>
+    </div>
+  </div>
+  <div class="glass stat a depth" style="--k:depth;--t:1.8s;--d:.6s;--z:-10">
+    <div class="big gradnum">2<span>x</span></div>
+    <div class="t">A loss feels about twice as strong as a gain of the same size.</div>
+    <div class="mono src">Loss aversion research</div>
+  </div>
+</section>
+
+<!-- 6 A OR B -->
+<section class="slide s-ab" data-chapter="Psychology" data-calm=".4">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">05 · Hold the frame</div><h1 class="h1 split" style="--d:.2s">Give a choice, <em>not a blank.</em></h1></div>
+  <div class="chats">
+    <div class="chat no">
+      <div class="mono lab a" style="--d:.7s">Not this</div>
+      <div class="bub me a" style="--k:left;--d:.9s">When are you free?</div>
+      <div class="bub them a" style="--k:right;--d:1.5s">I’ll let you know.</div>
+      <div class="res a" style="--d:2s"><span class="x"></span>Dead end</div>
+    </div>
+    <div class="chat yes">
+      <div class="mono lab a" style="--d:2.4s">Say this</div>
+      <div class="bub me a" style="--k:left;--d:2.6s">What’s better for you, Tuesday or Thursday?</div>
+      <div class="bub them a" style="--k:right;--d:3.2s">Thursday works.</div>
+      <div class="res a" style="--d:3.7s"><span class="dot pulse"></span>Booked</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7 OPEN: the memory hook -->
+<section class="slide s-open" data-chapter="Remember it" data-sun=".42" data-calm=".3">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">06 · Remember it in one word</div><h1 class="h1 split" style="--d:.2s">Good words <em>OPEN</em> doors.</h1><p class="lede a" style="--d:.9s;margin-top:18px">Bad words close them. Four letters hold every good word.</p></div>
+  <div class="letters">
+    <div class="glass lt a depth" style="--k:flipUp;--t:1.4s;--d:.9s;--z:6"><div class="L gradnum">O</div><div class="nm">Own it</div><div class="ds">It’s their money.</div><div class="ex">own · contribute · savings program · moving forward</div></div>
+    <div class="glass lt a depth" style="--k:flipUp;--t:1.4s;--d:1.1s;--z:9"><div class="L gradnum">P</div><div class="nm">Partner up</div><div class="ds">Next to us, not under us.</div><div class="ex">business partner · mentor · our team · let’s</div></div>
+    <div class="glass lt a depth" style="--k:flipUp;--t:1.4s;--d:1.3s;--z:12"><div class="L gradnum">E</div><div class="nm">Easy chat</div><div class="ds">A visit, not a pitch.</div><div class="ex">share · chat · recommend · introductions</div></div>
+    <div class="glass lt a depth" style="--k:flipUp;--t:1.4s;--d:1.5s;--z:15"><div class="L gradnum">N</div><div class="nm">New future</div><div class="ds">Where they’re headed.</div><div class="ex">helping families · entrepreneur · challenge · peace of mind</div></div>
+  </div>
+  <div class="glass doors a" style="--d:2.1s"><span class="dot pulse"></span><span><b>Plus two doors.</b> Never ask “when are you free?” Ask “A or B?”</span></div>
+</section>
+
+<!-- 7 CHART 1A -->
+<section class="slide s-chart" data-chapter="Chart 1 · Families" data-calm=".5">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">07 · Chart 1 · Talking with families</div><h1 class="h1 split" style="--d:.2s">Speak <em>their</em> language.</h1></div>
+  <div class="tbl four">
+    <div class="th a" style="--d:.6s"><span>OPEN</span><span>Not this</span><span></span><span>Say this</span></div>
+    <div class="glass rw a" style="--d:0.80s"><span class="tg tN">N</span><span class="bad">Closing, sales, sell</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Helping families, securing their future</span></div>
+    <div class="glass rw a" style="--d:0.95s"><span class="tg tE">E</span><span class="bad">Send me a referral</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Personal introductions, recommendations</span></div>
+    <div class="glass rw a" style="--d:1.10s"><span class="tg tN">N</span><span class="bad">Insurance industry</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">The financial space</span></div>
+    <div class="glass rw a" style="--d:1.25s"><span class="tg tO">O</span><span class="bad">Buy, purchase, pay</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Own, invest, contribute</span></div>
+  </div>
+</section>
+
+<!-- 8 CHART 1B -->
+<section class="slide s-chart" data-chapter="Chart 1 · Families" data-calm=".5">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">07 · Chart 1 · Talking with families</div><h1 class="h1 split" style="--d:.2s">Keep the door <em>open.</em></h1></div>
+  <div class="tbl four">
+    <div class="th a" style="--d:.6s"><span>OPEN</span><span>Not this</span><span></span><span>Say this</span></div>
+    <div class="glass rw a" style="--d:0.80s"><span class="tg tO">O</span><span class="bad">Policy, product, annuity</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Savings program, tax-free retirement plan</span></div>
+    <div class="glass rw a" style="--d:0.95s"><span class="tg tO">O</span><span class="bad">Commit, commitment</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Moving forward, start saving</span></div>
+    <div class="glass rw a" style="--d:1.10s"><span class="tg tO">O</span><span class="bad">Premium, cost, price, fee</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Contribution, investment, amount</span></div>
+    <div class="glass rw a" style="--d:1.25s"><span class="tg tO">O</span><span class="bad">Sign, signature</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Authorize, approve, verify</span></div>
+  </div>
+</section>
+
+<!-- 9 CHART 1C -->
+<section class="slide s-chart" data-chapter="Chart 1 · Families" data-calm=".5">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">07 · Chart 1 · Talking with families</div><h1 class="h1 split" style="--d:.2s">Ask, don’t <em>tell.</em></h1></div>
+  <div class="tbl four">
+    <div class="th a" style="--d:.6s"><span>OPEN</span><span>Not this</span><span></span><span>Say this</span></div>
+    <div class="glass rw a" style="--d:0.80s"><span class="tg tP">P</span><span class="bad">“You should…”</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">“Let’s optimize.” “How about we…”</span></div>
+    <div class="glass rw a" style="--d:0.95s"><span class="tg tE">E</span><span class="bad">Tell</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Recommend, advise</span></div>
+    <div class="glass rw a" style="--d:1.10s"><span class="tg tE">E</span><span class="bad">Giving commands</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">“Would you be open to…?”</span></div>
+  </div>
+</section>
+
+<!-- 10 CHART 2A -->
+<section class="slide s-chart" data-chapter="Chart 2 · Partners" data-calm=".5">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">08 · Chart 2 · Talking with future partners</div><h1 class="h1 split" style="--d:.2s">Talk like an <em>owner.</em></h1></div>
+  <div class="tbl four">
+    <div class="th a" style="--d:.6s"><span>OPEN</span><span>Not this</span><span></span><span>Say this</span></div>
+    <div class="glass rw a" style="--d:0.80s"><span class="tg tP">P</span><span class="bad">The company</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Our platform, our community</span></div>
+    <div class="glass rw a" style="--d:0.95s"><span class="tg tN">N</span><span class="bad">Side hustle, job, gig</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Entrepreneur, business</span></div>
+    <div class="glass rw a" style="--d:1.10s"><span class="tg tE">E</span><span class="bad">Appointment, pitch, meeting</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Share, chat, visit, event</span></div>
+    <div class="glass rw a" style="--d:1.25s"><span class="tg tP">P</span><span class="bad">Upline, boss, manager, SMD</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Mentor, coach, trainer</span></div>
+  </div>
+</section>
+
+<!-- 11 CHART 2B -->
+<section class="slide s-chart" data-chapter="Chart 2 · Partners" data-calm=".5">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">08 · Chart 2 · Talking with future partners</div><h1 class="h1 split" style="--d:.2s">Build it <em>together.</em></h1></div>
+  <div class="tbl four">
+    <div class="th a" style="--d:.6s"><span>OPEN</span><span>Not this</span><span></span><span>Say this</span></div>
+    <div class="glass rw a" style="--d:0.80s"><span class="tg tP">P</span><span class="bad">Join, recruit</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Get involved, come on board, get started</span></div>
+    <div class="glass rw a" style="--d:0.95s"><span class="tg tP">P</span><span class="bad">Recruit, downline</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Business partner, teammate</span></div>
+    <div class="glass rw a" style="--d:1.10s"><span class="tg tP">P</span><span class="bad">My team, me</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Our team, we, our firm</span></div>
+    <div class="glass rw a" style="--d:1.25s"><span class="tg tAB">A/B</span><span class="bad">When are you free?</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">What’s better for you, A or B?</span></div>
+  </div>
+</section>
+
+<!-- 12 CHART 2C -->
+<section class="slide s-chart" data-chapter="Chart 2 · Partners" data-calm=".5">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">08 · Chart 2 · Talking with future partners</div><h1 class="h1 split" style="--d:.2s">Point to the <em>future.</em></h1></div>
+  <div class="tbl four">
+    <div class="th a" style="--d:.6s"><span>OPEN</span><span>Not this</span><span></span><span>Say this</span></div>
+    <div class="glass rw a" style="--d:0.80s"><span class="tg tN">N</span><span class="bad">Commission, extra income</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Compensation, multiple streams of income</span></div>
+    <div class="glass rw a" style="--d:0.95s"><span class="tg tN">N</span><span class="bad">Problem, issue</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Challenge, opportunity to grow</span></div>
+    <div class="glass rw a" style="--d:1.10s"><span class="tg tN">N</span><span class="bad">“I can’t because…”</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">“I must because…” State your why.</span></div>
+    <div class="glass rw a" style="--d:1.25s"><span class="tg tN">N</span><span class="bad">Financial freedom</span><svg class="arr" viewBox="0 0 80 40"><path d="M4 20h66M54 6l16 14-16 14"/></svg><span class="good">Financial stability, peace of mind</span></div>
+  </div>
+</section>
+
+<!-- 11 ASK FOR THE YES -->
+<section class="slide s-ask" data-chapter="The close" data-sun=".66" data-calm=".35">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">09 · The closing question</div><h1 class="h1 split" style="--d:.2s">Ask for <em>the yes.</em></h1></div>
+  <div class="glass hero a depth" style="--k:depth;--t:1.6s;--d:.7s;--z:8">
+    <div class="mono k">The one to master</div>
+    <p class="q">“Would you be open to looking at different ways to <b>optimize</b> your current plan?”</p>
+  </div>
+  <div class="minis">
+    <div class="glass mini a" style="--d:1.4s"><div class="mono k">Moving money</div><p>“Would you be open to moving it from an <b>unprotected</b> place to a <b>protected</b> place?”</p></div>
+    <div class="glass mini a" style="--d:1.6s"><div class="mono k">Getting started</div><p>“What’s better for your first <b>contribution</b>, the 1st or the 15th?”</p></div>
+  </div>
+</section>
+
+<!-- 12 YOUR TURN -->
+<section class="slide s-turn" data-chapter="Your turn" data-calm=".3" data-hook="timer">
+  <div class="left">
+    <div class="eyebrow a" style="--d:.1s">10 · Your turn</div>
+    <h1 class="h1 split" style="--d:.2s;margin-top:22px">Say it <em>out loud.</em></h1>
+    <div class="glass scen a" style="--k:left;--d:1s">
+      <div class="mono k">Scenario · Step 5</div>
+      <p>You walked them through the plan. They like it. Now you move to the application.</p>
+      <div class="mono k" style="margin-top:34px">Use these words</div>
+      <div class="chips"><span class="chip acc">Own</span><span class="chip acc">Contribution</span><span class="chip acc">Authorize</span></div>
+      <div class="bonus">Bonus: finish with an <em>A or B</em> choice.</div>
+    </div>
+  </div>
+  <div class="timer a" style="--k:bloom;--t:1.8s;--d:.6s">
+    <svg viewBox="0 0 500 500"><circle class="track" cx="250" cy="250" r="220"/><circle class="arc" cx="250" cy="250" r="220" pathLength="100"/></svg>
+    <div class="mid"><div class="big gradnum num" id="tsec">30</div><div class="mono">Seconds</div></div>
+  </div>
+</section>
+
+<!-- 13 ONE WAY TO SAY IT -->
+<section class="slide s-model" data-chapter="Your turn" data-calm=".35">
+  <div class="center">
+    <div class="eyebrow c a" style="--d:.1s">One way to say it</div>
+    <p class="quote a" style="--k:flipUp;--t:1.6s;--d:.4s">“Everything you shared tells me this <b>savings program</b> fits. Would you be open to getting it started today? What’s better for your first <b>contribution</b>, the 1st or the 15th? Perfect. I just need your <b>authorization</b> right here, and it’s yours to <b>own</b>.”</p>
+    <div class="tags a" style="--d:1.6s"><span class="chip">No “sign”</span><span class="chip">No “policy”</span><span class="chip">No “premium”</span><span class="chip acc">Ends with A or B</span></div>
+  </div>
+</section>
+
+<!-- 14 THE DRILL -->
+<section class="slide s-drill" data-chapter="The drill" data-calm=".45">
+  <div class="head"><div class="eyebrow a" style="--d:.1s">11 · The drill</div><h1 class="h1 split" style="--d:.2s">Reps beat <em>reading.</em></h1></div>
+  <div class="cards">
+    <div class="glass card a depth" style="--k:depth;--t:1.5s;--d:.6s;--z:6">
+      <div class="n">Round 1</div>
+      <div class="flip"><span class="b">“Too busy”</span><span class="g">3 answers</span></div>
+      <div class="big">Flip it</div>
+      <div class="sm">The 10 objections from the Hub. Answer out loud, then flip for 3 good-word answers.</div>
+    </div>
+    <div class="glass card a depth" style="--k:depth;--t:1.5s;--d:.75s;--z:9">
+      <div class="n">Round 2</div>
+      <svg class="ic" viewBox="0 0 100 100"><path class="draw" pathLength="1" style="--d:1.2s" d="M14 22h72v46H44L26 84V68H14z"/><path class="draw" pathLength="1" style="--d:1.5s" d="M30 40h40M30 52h26"/></svg>
+      <div class="big">Say it</div>
+      <div class="sm">Get a real moment from Steps 1 to 5. Type or speak your line. It flags every bad word.</div>
+    </div>
+    <div class="glass card a depth" style="--k:depth;--t:1.5s;--d:.9s;--z:15">
+      <div class="n">Round 3</div>
+      <svg class="ic" viewBox="0 0 100 100"><circle class="draw" pathLength="1" style="--d:1.35s" cx="50" cy="50" r="36"/><circle class="draw" pathLength="1" style="--d:1.55s" cx="50" cy="50" r="20"/><circle cx="50" cy="50" r="5" class="fillacc"/></svg>
+      <div class="big">Ask it</div>
+      <div class="sm">Practice the closing question until it sounds like you.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 15 IN THE APP -->
+<section class="slide s-app" data-chapter="Tuesday" data-sun=".86" data-calm=".4">
+  <div class="left">
+    <div class="eyebrow a" style="--d:.1s">12 · Starting today</div>
+    <h1 class="h1 split" style="--d:.2s;margin-top:22px">Find it in<br><em>the app.</em></h1>
+    <div class="steps">
+      <div class="st a" style="--d:1s"><b class="gradnum">1</b><span>Open the app. Go to <strong>Scripts.</strong></span></div>
+      <div class="st a" style="--d:1.2s"><b class="gradnum">2</b><span>Tap <strong>Good Words</strong> for the full sheet.</span></div>
+      <div class="st a" style="--d:1.4s"><b class="gradnum">3</b><span>Play the <strong>drill</strong> every day this month.</span></div>
+      <div class="st a" style="--d:1.6s"><b class="gradnum">4</b><span>Print the sheet. Keep it by your phone.</span></div>
+    </div>
+  </div>
+  <div class="phone a depth" style="--k:depth;--t:1.8s;--d:.6s;--z:-14">
+    <div class="scr">
+      <div class="pt">Scripts</div>
+      <div class="pc on"><span>Good Words</span><i></i></div>
+      <div class="pc"><span>Learn OPEN</span><i></i></div><div class="pc"><span>Objection cards</span><i></i></div>
+      <div class="pc"><span>Say it</span><i></i></div>
+      <div class="pc"><span>Ask it</span><i></i></div>
+    </div>
+  </div>
+</section>
+
+<!-- 16 CLOSE -->
+<section class="slide s-end" data-chapter="Close" data-sun=".98" data-calm=".2">
+  <div class="center">
+    <div class="rise-logo a" style="--k:bloom;--t:2s;--d:.1s;width:130px;height:130px;margin-bottom:40px"></div>
+    <h1 class="mega split" style="--d:.4s">Master the words.<br><em>Own the room.</em></h1>
+    <p class="lede a" style="--d:1.8s;margin-top:40px">New month. New words. New results.</p>
+    <div class="mono fine a" style="--d:2.3s">Do not distribute outside Team RISE · For internal training only</div>
+  </div>
+</section>
+
+</div>
+
+<div id="hud">
+  <div class="tl"><div class="rise-logo"></div><span>Team RISE · Good Words</span></div>
+  <div class="tr"><span id="chap"></span><b id="cnt"></b></div>
+  <div id="prog"></div>
+  <div id="tbtn"><button data-a="grid" title="See every slide">▦</button><button data-a="fs" title="Full screen">⤢</button></div>
+</div>
+<div id="rot">↻ Turn your phone sideways for full size</div>
+<div id="help"><div class="glass"><h3>Presenter keys</h3><table>
+<tbody><tr><td>→ SPACE CLICK</td><td>Next slide</td></tr>
+<tr><td>←</td><td>Back</td></tr>
+<tr><td>O</td><td>See every slide (tap one to jump)</td></tr>
+<tr><td>F</td><td>Full screen</td></tr>
+<tr><td>?</td><td>Show or hide this card</td></tr>
+</tbody></table></div></div>
+<div id="toast"></div>
+
+<script>
+const $=(s,r=document)=>r.querySelector(s),$$=(s,r=document)=>[...r.querySelectorAll(s)];
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const COARSE=matchMedia('(pointer: coarse)').matches;
+const PTR={x:0,y:0};
+const stage=$('#stage'),slides=$$('.slide'),N=slides.length;
+let idx=-1,S=1,OX=0,OY=0,editing=false,overview=false;
+
+/* RISE mark */
+function riseSVG(){const id='rc'+Math.random().toString(36).slice(2,8);let r='';for(let i=0;i<9;i++){const a=(190+i*20)*Math.PI/180,h=5.6*Math.PI/180,L=150;r+=`<polygon points="100,122 ${(100+L*Math.cos(a-h)).toFixed(1)},${(122+L*Math.sin(a-h)).toFixed(1)} ${(100+L*Math.cos(a+h)).toFixed(1)},${(122+L*Math.sin(a+h)).toFixed(1)}"/>`}
+return `<svg viewBox="0 0 200 200"><defs><clipPath id="${id}"><circle cx="100" cy="100" r="90"/></clipPath><radialGradient id="${id}g" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#3f8c9c"/><stop offset="1" stop-color="#25586a"/></radialGradient></defs><circle cx="100" cy="100" r="99" fill="#fff"/><circle cx="100" cy="100" r="91" fill="url(#${id}g)"/><g clip-path="url(#${id})"><g class="rays" fill="#fff">${r}</g><path d="M-20 205 L100 110 L220 205Z" fill="#fff"/><path d="M62 140 q19 -9 38 -2 t38 -2" stroke="#33707f" stroke-width="4" fill="none" stroke-linecap="round"/><path d="M-20 205 L100 110 L220 205" stroke="#33707f" stroke-width="3" fill="none"/><text x="100" y="181" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="42" font-weight="800" fill="#33707f">RISE</text></g></svg>`}
+$$('.rise-logo').forEach(el=>el.innerHTML=riseSVG());
+
+/* split headlines into letters */
+function split(el){if(!el.dataset.src)el.dataset.src=el.innerHTML;let i=0;
+  const walk=node=>{[...node.childNodes].forEach(n=>{if(n.nodeType===3){const frag=document.createDocumentFragment();n.textContent.split(/(\s+)/).forEach(w=>{if(!w)return;if(/^\s+$/.test(w)){frag.appendChild(document.createTextNode(' '));return}const ws=document.createElement('span');ws.className='w';[...w].forEach(c=>{const cs=document.createElement('span');cs.className='ch';cs.style.setProperty('--i',i++);cs.textContent=c;ws.appendChild(cs)});frag.appendChild(ws)});n.replaceWith(frag)}else if(n.nodeType===1)walk(n)})};
+  walk(el);el.setAttribute('data-text',el.textContent)}
+function unsplit(el){if(el.dataset.src!=null){el.innerHTML=el.dataset.src}}
+$$('.split').forEach(split);
+
+/* per-slide sunrise + accent */
+slides.forEach((s,i)=>{const p=s.dataset.sun!=null?+s.dataset.sun:.04+i/(N-1)*.92;s.dataset.p=p;s.style.setProperty('--pp',Math.round(Math.min(1,p*1.05)*100)+'%')});
+
+/* fit stage */
+function fit(){const top=window.EDITBAR||0;S=Math.min(innerWidth/1920,(innerHeight-top)/1080);OX=(innerWidth-1920*S)/2;OY=top+(innerHeight-top-1080*S)/2;stage.style.transform=`translate(${OX}px,${OY}px) scale(${S})`;BG.resize();MOTES.resize()}
+
+/* ---------- WebGL dawn ---------- */
+const BG=(()=>{const c=$('#bg');const gl=c.getContext('webgl',{antialias:false,premultipliedAlpha:false});
+  if(!gl){document.body.style.background='radial-gradient(ellipse at 50% 100%,#1b4b55,#03070b 70%)';return{resize(){},to(){}}}
+  const vs='attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  const fs=`precision highp float;uniform vec2 R;uniform float T,P,C,K;uniform vec2 M;
+float hash(vec2 p){p=fract(p*vec2(123.34,456.21));p+=dot(p,p+45.32);return fract(p.x*p.y);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);return mix(mix(hash(i),hash(i+vec2(1,0)),f.x),mix(hash(i+vec2(0,1)),hash(i+vec2(1,1)),f.x),f.y);}
+float fbm(vec2 p){float s=0.,a=.5;for(int i=0;i<5;i++){s+=a*noise(p);p=p*2.02+vec2(3.1,1.7);a*=.5;}return s;}
+void main(){vec2 uv=gl_FragCoord.xy/R;float ar=R.x/R.y;vec2 p=vec2((uv.x-.5)*ar,uv.y)+M*vec2(.014,.009);
+ float hz=.16;vec2 sun=vec2(0.,hz-.13+P*.40);
+ vec3 night=vec3(.006,.012,.028),tealD=vec3(.015,.075,.10),tealH=vec3(.05,.33,.36),gold=vec3(1.,.6,.3);
+ float y=clamp((uv.y-hz)/(1.-hz),0.,1.);
+ vec3 top=mix(night,tealD,P);
+ vec3 hzc=mix(vec3(.025,.10,.14),mix(tealH,gold*.9,smoothstep(.45,1.,P)),smoothstep(0.,.55,P));
+ vec3 col=mix(hzc,top,pow(y,.42));
+ vec2 g=floor(gl_FragCoord.xy/2.);float st=hash(g);float tw=.5+.5*sin(T*1.7+st*60.);
+ col+=vec3(.8,.92,1.)*step(.9982,st)*tw*(1.-P*.9)*smoothstep(.3,.75,uv.y)*.85;
+ float a=fbm(vec2(p.x*1.1+T*.012,p.y*1.7-T*.018)+fbm(p*1.6+T*.008));
+ float rib=smoothstep(.48,.86,a)*smoothstep(1.,.5,uv.y)*smoothstep(.22,.55,uv.y);
+ vec3 auc=mix(vec3(.12,.78,.74),vec3(1.,.56,.36),P);
+ col+=rib*auc*.24*(1.-C*.7);
+ vec2 d=p-sun;float r=length(d);
+ vec3 sc=mix(vec3(.3,.9,.86),vec3(1.,.74,.42),smoothstep(.15,.9,P));
+ col+=sc*(.03/(r*r+.03))*(.16+.5*P)*(1.-C*.35)*K;
+ float ang=atan(d.x,d.y)+sin(T*.05)*.02;
+ float rays=pow(max(0.,cos(ang*18.)),7.)*smoothstep(1.75,.2,abs(ang));
+ rays*=smoothstep(1.5,.08,r)*(.35+.65*fbm(vec2(ang*4.,T*.07)));
+ col+=sc*rays*(.08+.22*P)*(1.-C*.6)*K*smoothstep(hz-.01,hz+.08,uv.y);
+ float x=p.x;
+ float m1=hz+.15-abs(x)*.40+(fbm(vec2(x*4.,1.))-.5)*.035;
+ m1=max(m1,hz+.015+(fbm(vec2(x*2.2,5.))-.5)*.05);
+ float m2=hz+.075-abs(x-.62)*.22+(fbm(vec2(x*3.,9.))-.5)*.04;
+ float m3=hz+.07-abs(x+.66)*.2+(fbm(vec2(x*3.,13.))-.5)*.04;
+ float mtn=max(m1,max(m2,m3));
+ float rim=exp(-abs(uv.y-mtn)*160.)*smoothstep(.75,0.,abs(x-sun.x))*(.25+.9*P);
+ if(uv.y<mtn){vec3 base=mix(vec3(.008,.02,.03),vec3(.03,.06,.075),P);col=base*(.5+.5*uv.y/mtn)+sc*.05*P;}
+ col+=sc*rim*.55;
+ float v=smoothstep(1.35,.25,length((uv-vec2(.5,.45))*vec2(ar*.75,1.)));col*=mix(.5,1.,v);
+ col+=(hash(gl_FragCoord.xy+fract(T*7.)*91.)-.5)*.022;
+ gl_FragColor=vec4(pow(max(col,0.),vec3(.96)),1.);}`;
+  const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))console.error(gl.getShaderInfoLog(o));return o};
+  const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));gl.linkProgram(pr);gl.useProgram(pr);
+  const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);const lp=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(lp);gl.vertexAttribPointer(lp,2,gl.FLOAT,false,0,0);
+  const U=n=>gl.getUniformLocation(pr,n),uR=U('R'),uT=U('T'),uP=U('P'),uC=U('C'),uM=U('M'),uK=U('K');
+  let P=0,tp=0,C=0,tc=0,K=0,mx=0,my=0;const t0=performance.now();
+  function resize(){const q=.55;c.width=Math.round(innerWidth*q*Math.min(devicePixelRatio,2)/1.4);c.height=Math.round(innerHeight*q*Math.min(devicePixelRatio,2)/1.4);gl.viewport(0,0,c.width,c.height)}
+  (function loop(){P+=(tp-P)*.022;C+=(tc-C)*.03;K+=(1-K)*.012;mx+=(PTR.x-mx)*.04;my+=(PTR.y-my)*.04;
+    gl.uniform2f(uR,c.width,c.height);gl.uniform1f(uT,RM?0:(performance.now()-t0)/1000);gl.uniform1f(uP,P);gl.uniform1f(uC,C);gl.uniform1f(uK,K);gl.uniform2f(uM,mx,-my);gl.drawArrays(gl.TRIANGLES,0,3);requestAnimationFrame(loop)})();
+  return{resize,to(p,c){tp=p;tc=c}}})();
+
+/* ---------- light motes ---------- */
+const MOTES=(()=>{const c=$('#motes'),x=c.getContext('2d');let dpr=1,M=[],boost=0;
+  function resize(){dpr=Math.min(devicePixelRatio||1,2);c.width=innerWidth*dpr;c.height=innerHeight*dpr;const n=Math.round(innerWidth*innerHeight/26000);M=Array.from({length:n},mk)}
+  function mk(){return{x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.8+.4,v:Math.random()*.25+.06,w:Math.random()*6.28,a:Math.random()*.5+.15}}
+  function frame(){x.setTransform(dpr,0,0,dpr,0,0);x.clearRect(0,0,innerWidth,innerHeight);const col=getComputedStyle(document.documentElement).getPropertyValue('--mote')||'255,220,170';
+    for(const m of M){m.y-=m.v*(1+boost*3);m.w+=.01;m.x+=Math.sin(m.w)*.25;if(m.y<-10){m.y=innerHeight+10;m.x=Math.random()*innerWidth}
+      const fl=.6+.4*Math.sin(m.w*3);x.fillStyle=`rgba(${col},${m.a*fl})`;x.beginPath();x.arc(m.x,m.y,m.r,0,6.283);x.fill()}
+    boost*=.97;if(!RM)requestAnimationFrame(frame)}
+  frame();return{resize,kick(){boost=1}}})();
+
+/* ---------- pointer: parallax + glass light ---------- */
+let sx=0,sy=0;
+addEventListener('pointermove',e=>{PTR.x=e.clientX/innerWidth*2-1;PTR.y=e.clientY/innerHeight*2-1;wake();
+  const s=slides[idx];if(!s||overview)return;
+  for(const g of s.querySelectorAll('.glass')){const r=g.getBoundingClientRect();g.style.setProperty('--gx',((e.clientX-r.left)/r.width*100)+'%');g.style.setProperty('--gy',((e.clientY-r.top)/r.height*100)+'%')}
+  const t=e.target.closest&&e.target.closest('.tilt');$$('.tilt',s).forEach(el=>{if(el!==t)el.style.transform=''});
+  if(t){const r=t.getBoundingClientRect(),dx=(e.clientX-r.left)/r.width-.5,dy=(e.clientY-r.top)/r.height-.5;t.style.transform=`rotateY(${dx*14}deg) rotateX(${-dy*12}deg) translateZ(20px)`}});
+(function par(){sx+=(PTR.x-sx)*.06;sy+=(PTR.y-sy)*.06;stage.style.setProperty('--mx',sx.toFixed(3));stage.style.setProperty('--my',sy.toFixed(3));requestAnimationFrame(par)})();
+
+/* ---------- HUD ---------- */
+$('#prog').innerHTML=slides.map((s,i)=>`<i data-i="${i}" title="${i+1}"></i>`).join('');
+$('#prog').addEventListener('click',e=>{const i=e.target.dataset.i;if(i!=null){e.stopPropagation();go(+i)}});
+function hud(){$$('#prog i').forEach((el,i)=>{el.classList.toggle('on',i<idx);el.classList.toggle('cur',i===idx)});$('#cnt').textContent=String(idx+1).padStart(2,'0')+' / '+String(N).padStart(2,'0');$('#chap').textContent=slides[idx].dataset.chapter||'';
+  document.documentElement.style.setProperty('--pp',slides[idx].style.getPropertyValue('--pp'));
+  const p=+slides[idx].dataset.p;document.documentElement.style.setProperty('--mote',p<.5?'190,250,245':'255,214,160')}
+let idleT;function wake(){document.body.classList.remove('idle');clearTimeout(idleT);idleT=setTimeout(()=>{if(!editing&&!overview)document.body.classList.add('idle')},2600)}
+function toast(t){const el=$('#toast');el.textContent=t;el.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>el.classList.remove('show'),2200)}
+
+/* ---------- navigation ---------- */
+const hooks={};let hookStop=null;
+function go(n){n=Math.max(0,Math.min(N-1,n));if(n===idx)return;const prev=slides[idx];stage.classList.toggle('back',n<idx);
+  if(hookStop){hookStop();hookStop=null}
+  if(prev){prev.classList.remove('active');prev.classList.add('leaving');const p=prev;setTimeout(()=>{if(!p.classList.contains('active'))p.classList.remove('leaving')},1300)}
+  const s=slides[n];s.classList.remove('leaving');void s.offsetWidth;s.classList.add('active');idx=n;
+  BG.to(+s.dataset.p,+(s.dataset.calm||0));hud();counters(s);MOTES.kick();
+  const h=s.dataset.hook;if(h&&hooks[h])hookStop=hooks[h](s)||null;
+  try{history.replaceState(null,'','#'+(n+1))}catch(e){}}
+const next=()=>go(idx+1),prev=()=>go(idx-1);
+
+function counters(s){s.querySelectorAll('[data-count]').forEach(el=>{const to=+el.dataset.count,suf=el.dataset.suffix||'',pre=el.dataset.prefix||'';if(RM){el.textContent=pre+to+suf;return}const st=performance.now()+700,dur=2200;
+  (function f(now){const k=Math.min(1,Math.max(0,(now-st)/dur)),e=1-Math.pow(1-k,4);el.textContent=pre+Math.round(to*e)+suf;if(k<1&&s.classList.contains('active'))requestAnimationFrame(f);else el.textContent=pre+to+suf})(performance.now())})}
+
+
+/* ---------- overview ---------- */
+function toggleOverview(on){overview=on??!overview;document.body.classList.toggle('overview',overview);
+  if(overview){stage.classList.add('static');$$('[data-count]').forEach(el=>el.textContent=(el.dataset.prefix||'')+el.dataset.count+(el.dataset.suffix||''));slides.forEach((s,i)=>{const c=i%5,r=Math.floor(i/5);s.style.setProperty('--ox',(110+c*(320+40))+'px');s.style.setProperty('--oy',(150+r*(180+40))+'px');s.classList.toggle('cur',i===idx)});wake()}
+  else{slides.forEach(s=>s.classList.remove('cur'));setTimeout(()=>stage.classList.remove('static'),50);const s=slides[idx];s.classList.remove('active');void s.offsetWidth;s.classList.add('active')}}
+stage.addEventListener('click',e=>{if(overview){const s=e.target.closest('.slide');if(s){const i=slides.indexOf(s);toggleOverview(false);idx===i?0:go(i)}return}
+  if(editing||e.target.closest('a,button,[contenteditable]'))return;(COARSE&&e.clientX<innerWidth*.3?prev:next)()});
+
+
+/* ---------- keys + swipe ---------- */
+addEventListener('keydown',e=>{wake();const k=e.key;
+  if(editing&&document.activeElement&&document.activeElement.isContentEditable){if(k==='Escape')document.activeElement.blur();return}
+  if(['ArrowRight','ArrowDown','PageDown',' ','Enter'].includes(k)){e.preventDefault();if(overview){toggleOverview(false)}else next()}
+  else if(['ArrowLeft','ArrowUp','PageUp','Backspace'].includes(k)){e.preventDefault();if(!overview)prev()}
+  else if(k==='Home')go(0);else if(k==='End')go(N-1);
+  else if(k==='o'||k==='O'||k==='g'||k==='G')toggleOverview();
+  else if(k==='Escape'){if($('#help').classList.contains('show'))$('#help').classList.remove('show');else if(overview)toggleOverview(false)}
+  else if(k==='f'||k==='F'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen().catch(()=>{})}
+  else if(k==='?'||k==='/'||k==='h'||k==='H')$('#help').classList.toggle('show')});
+let tx=null;addEventListener('touchstart',e=>{tx=e.touches[0].clientX},{passive:true});addEventListener('touchend',e=>{if(tx==null)return;const dx=e.changedTouches[0].clientX-tx;if(Math.abs(dx)>60)(dx<0?next:prev)();tx=null});
+$('#help').addEventListener('click',()=>$('#help').classList.remove('show'));
+
+
+
+/* ---------- edit mode (used by editor.js) ---------- */
+function leafs(){return $$('[data-e]')}
+function toggleEdit(){editing=!editing;document.body.classList.toggle('editing',editing);
+  if(editing){stage.classList.add('static');$$('.split').forEach(unsplit);leafs().forEach(el=>el.setAttribute('contenteditable','true'));toast('Editing · click any words')}
+  else{leafs().forEach(el=>el.removeAttribute('contenteditable'));$$('.split').forEach(el=>{el.dataset.src=el.innerHTML;split(el)});stage.classList.remove('static');toast('Preview')}}
+
+/* ---------- touch + small screens ---------- */
+$$('#tbtn button').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();wake();const a=b.dataset.a;
+  if(a==='grid')toggleOverview();else if(a==='fs'){const d=document,el=d.documentElement;(d.fullscreenElement||d.webkitFullscreenElement)?(d.exitFullscreen||d.webkitExitFullscreen).call(d):(el.requestFullscreen||el.webkitRequestFullscreen||(()=>{})).call(el)}}));
+if(!(document.fullscreenEnabled||document.webkitFullscreenEnabled)){const f=$('#tbtn [data-a=fs]');if(f)f.remove()}
+if(COARSE){const h=$('#help tbody');if(h)h.innerHTML='<tr><td>TAP RIGHT</td><td>Next slide</td></tr><tr><td>TAP LEFT</td><td>Back</td></tr><tr><td>SWIPE</td><td>Next or back</td></tr><tr><td>▦</td><td>See every slide</td></tr>'}
+
+/* ---------- deck hooks ---------- */
+/* title: rotate the bad word into the good word */
+hooks.title = s => {
+  const pairs = [['Sell', 'Help families'], ['Buy', 'Own'], ['Recruit', 'Business partner'], ['Upline', 'Mentor'], ['Policy', 'Savings program'], ['Sign', 'Authorize'], ['Side hustle', 'Business']];
+  const box = s.querySelector('.swapper'), f = box.querySelector('.from'), t = box.querySelector('.to');
+  let i = 0;
+  const show = () => { box.classList.remove('go'); void box.offsetWidth; [f.textContent, t.textContent] = pairs[i]; box.classList.add('go'); i = (i + 1) % pairs.length };
+  show(); const id = setInterval(show, 3200);
+  return () => clearInterval(id);
+};
+
+/* your turn: 30 second clock, starts when the slide opens */
+hooks.timer = s => {
+  const arc = s.querySelector('.timer .arc'), num = s.querySelector('#tsec');
+  let left = 30; arc.style.strokeDashoffset = 0; num.textContent = left;
+  const id = setInterval(() => { left--; num.textContent = Math.max(0, left); arc.style.strokeDashoffset = (30 - left) / 30 * 100; if (left <= 0) clearInterval(id) }, 1000);
+  return () => clearInterval(id);
+};
+
+addEventListener('resize',fit);fit();
+if(/[?&]edit\b/.test(location.search)){const ed=document.createElement('script');ed.src='editor.js?v='+Date.now();document.body.appendChild(ed)}
+const start=Math.max(1,Math.min(N,parseInt(location.hash.slice(1))||1));go(start-1);wake();
+</script>
+</body></html>
